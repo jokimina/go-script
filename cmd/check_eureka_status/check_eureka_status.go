@@ -99,10 +99,8 @@ func main() {
 	flag.Parse()
 	if len(Receivers) == 0 || len(EurekaUrl) == 0 || len(DingDingUrl) == 0 {
 		flag.Usage()
-		os.Exit(1)
 	}
 	fmt.Println(EurekaUrl, DingDingUrl, Receivers)
-	os.Exit(1)
 	url := EurekaUrl + "/eureka/apps"
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
