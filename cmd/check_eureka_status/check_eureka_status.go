@@ -128,7 +128,7 @@ func main() {
 		d := DingDing{
 			Url: DingDingUrl,
 		}
-		d.Report([]string{"13671663037"},
+		d.Report(Receivers,
 			fmt.Sprintf("【华北二】线上eureka注册异常\n%s", strings.Join(exceptList, "")))
 	}
 }
