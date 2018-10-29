@@ -1,0 +1,54 @@
+{
+  "applications": {
+    "application": [
+      {
+        "instance": [
+          {
+            "actionType": "ADDED",
+            "app": "XXX-SERVICE",
+            "countryId": 1,
+            "dataCenterInfo": {
+              "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+              "name": "MyOwn"
+            },
+            "healthCheckUrl": "http://sc-xxx:8080/actuator/health",
+            "homePageUrl": "http://sc-xxx:8080/",
+            "hostName": "sc-xxx",
+            "instanceId": "sc-xxx:xxx-service",
+            "ipAddr": "172.20.5.210",
+            "isCoordinatingDiscoveryServer": "false",
+            "lastDirtyTimestamp": "1540691588606",
+            "lastUpdatedTimestamp": "1540691589311",
+            "leaseInfo": {
+              "durationInSecs": 90,
+              "evictionTimestamp": 0,
+              "lastRenewalTimestamp": 1540705450659,
+              "registrationTimestamp": 1540691589311,
+              "renewalIntervalInSecs": 30,
+              "serviceUpTimestamp": 1540455309391
+            },
+            "metadata": {
+              "management.port": "8080"
+            },
+            "overriddenStatus": "UNKNOWN",
+            "port": {
+              "$": 8080,
+              "@enabled": "true"
+            },
+            "securePort": {
+              "$": 443,
+              "@enabled": "false"
+            },
+            "secureVipAddress": "xx-service",
+            "status": "UP",
+            "statusPageUrl": "http://sc-xx:8080/actuator/info",
+            "vipAddress": "xxx-service"
+          }
+        ],
+        "name": "xxxx-SERVICE"
+      }
+    ],
+    "apps__hashcode": "DOWN_2_UP_17_",
+    "versions__delta": "1"
+  }
+}
