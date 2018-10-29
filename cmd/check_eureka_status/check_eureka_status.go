@@ -93,7 +93,7 @@ func init() {
 }
 
 func usage() {
-	fmt.Fprintf(os.Stdout, "Usage %s -eUrl xxx.eureka.xxx.com -dUrl https://oapi.dingtalk.com/robot/send?access_token=xxxx -r 13611111111\nOptions:\n", os.Args[0])
+	fmt.Fprintf(os.Stdout, "Usage %s -eUrl xxx.eureka.xxx.com -dUrl https://oapi.dingtalk.com/robot/send?access_token=xxxx -r 13611111111 -d 华北集群\nOptions:\n", os.Args[0])
 	flag.PrintDefaults()
 }
 
