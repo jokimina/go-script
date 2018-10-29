@@ -81,12 +81,14 @@ var (
 	EurekaUrl   string
 	DingDingUrl string
 	Receivers   arrayFlags
+	Comment   string
 )
 
 func init() {
 	flag.StringVar(&EurekaUrl, "eUrl", "", "eureka url")
 	flag.StringVar(&DingDingUrl, "dUrl", "", "dingding url")
 	flag.Var(&Receivers, "r", "receivers")
+	flag.StringVar(&Comment, "m", "", "comment")
 	flag.Usage = usage
 }
 
@@ -127,6 +129,6 @@ func main() {
 			Url: DingDingUrl,
 		}
 		d.Report(Receivers,
-			fmt.Sprintf("【华北二】线上eureka注册异常\n%s", strings.Join(exceptList, "")))
+			fmt.Sprintf("[%s eureka注册异常](%s)\n%s", Comment, EurekaUrl, strings.Join(exceptList, "")))
 	}
 }
