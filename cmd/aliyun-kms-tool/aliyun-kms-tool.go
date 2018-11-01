@@ -5,28 +5,9 @@ import (
 	"fmt"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/kms"
+	"github.com/jokimina/go-script/pkg/aliyun"
 	"os"
 )
-
-type Config struct {
-	AccessKeyId     string
-	AccessKeySecret string
-	RegionId        string
-}
-
-func getConfigFromEnv() *Config {
-	config := &Config{
-		AccessKeyId:     os.Getenv("ACCESS_KEY_ID"),
-		AccessKeySecret: os.Getenv("ACCESS_KEY_SECRET"),
-		RegionId:        os.Getenv("REGION_ID"),
-	}
-	if config.AccessKeyId == "" || config.AccessKeySecret == "" || config.RegionId == "" {
-		panic("Get REGION_ID ACCESS_KEY_ID ACCESS_KEY_SECRET from environment variables failed")
-	} else {
-		return config
-	}
-	return config
-}
 
 var (
 	encrypt  string
@@ -87,7 +68,7 @@ func main() {
 		fmt.Println("encrypt need a kms key id !")
 		os.Exit(1)
 	}
-	config := getConfigFromEnv()
+	config := aliyun.NewConfig().GetConfigFromEnv()
 	kmsClient, err := kms.NewClientWithAccessKey(config.RegionId, config.AccessKeyId, config.AccessKeySecret)
 	if err != nil {
 		panic(err)
