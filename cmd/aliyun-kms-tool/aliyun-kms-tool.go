@@ -42,7 +42,8 @@ func init() {
 }
 
 func usage() {
-		fmt.Printf( ` encrypt:
+		fmt.Printf( `
+  encrypt:
     %[1]s -e xxxxxxxxx -id xxxxxx
   decrypt:
     %[1]s -d xxxxxxxxxx
