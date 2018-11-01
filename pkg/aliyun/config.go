@@ -16,6 +16,10 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
+func NewConfigFromEnv() *Config {
+	return (&Config{}).GetConfigFromEnv()
+}
+
 func (c *Config) GetConfigFromEnv() *Config {
 	c = &Config{
 		AccessKeyId:     os.Getenv("ACCESS_KEY_ID"),
