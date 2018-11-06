@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	ossEndpoint = "http://oss-ap-southeast-5.aliyuncs.com"
+	ossEndpoint   = "http://oss-ap-southeast-5.aliyuncs.com"
 	ossBucketName = "xxxx-indonesia"
-	ossDir = "image/"
+	ossDir        = "image/"
 	testImageName = "319971b89281"
-	ossObjectKey = ossDir + testImageName
+	ossObjectKey  = ossDir + testImageName
 )
 
 func main() {

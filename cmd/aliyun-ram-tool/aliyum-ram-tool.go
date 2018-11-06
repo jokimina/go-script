@@ -9,10 +9,9 @@ import (
 	"sync"
 )
 
-
 var (
 	usernameList []string
-	ackMap map[string]string
+	ackMap       map[string]string
 )
 
 func searchAccessId(accessKeyId string) {
@@ -37,7 +36,7 @@ func searchAccessId(accessKeyId string) {
 	//usernameList = usernameList[:30]
 	wg := &sync.WaitGroup{}
 	c := make(chan bool, 20)
-	for i, username := range usernameList{
+	for i, username := range usernameList {
 		wg.Add(1)
 		c <- true
 		go func(i int, c chan bool, username string) {
@@ -50,7 +49,7 @@ func searchAccessId(accessKeyId string) {
 			if err != nil {
 				//fmt.Println("Error: ", username, "-- ", i)
 			}
-			if len(resp.AccessKeys.AccessKey) > 0{
+			if len(resp.AccessKeys.AccessKey) > 0 {
 				//fmt.Println(resp.AccessKeys.AccessKey, username, "-- ", i)
 			} else {
 				//fmt.Println("no ack of ", username, "-- ", i)
@@ -62,7 +61,7 @@ func searchAccessId(accessKeyId string) {
 				}
 			}
 
-			<- c
+			<-c
 		}(i, c, username)
 	}
 	wg.Wait()
@@ -72,16 +71,16 @@ func searchAccessId(accessKeyId string) {
 	//go func() {
 	//	for {
 	//		select {
-    //		  	case v := <- c:
-    //		  		fmt.Println("Get ack of username: ", v)
+	//		  	case v := <- c:
+	//		  		fmt.Println("Get ack of username: ", v)
 	//				lkRequest := ram.CreateListAccessKeysRequest()
 	//				lkRequest.SetScheme(requests.HTTPS)
-    //		  		lkRequest.UserName = v
-    //		  		resp, err := ramClient.ListAccessKeys(lkRequest)
-    //		  		if err != nil {
-    //		  			fmt.Println("Error: ", v)
+	//		  		lkRequest.UserName = v
+	//		  		resp, err := ramClient.ListAccessKeys(lkRequest)
+	//		  		if err != nil {
+	//		  			fmt.Println("Error: ", v)
 	//				}
-    //		  		fmt.Println(resp.AccessKeys, v)
+	//		  		fmt.Println(resp.AccessKeys, v)
 	//			case <- time.After(5 * time.Second):
 	//				fmt.Println("Timeout!")
 	//		}

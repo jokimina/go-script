@@ -81,7 +81,7 @@ var (
 	EurekaUrl   string
 	DingDingUrl string
 	Receivers   arrayFlags
-	Comment   string
+	Comment     string
 )
 
 func init() {
