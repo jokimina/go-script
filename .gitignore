@@ -12,5 +12,7 @@
 *.out
 
 .idea
-
+# custom
 bin/*
+config.json
+
