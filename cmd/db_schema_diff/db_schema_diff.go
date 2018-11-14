@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/gomail.v2"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,7 +21,7 @@ var (
 	saveDir   = time.Now().Format("2006-01-02")
 	fDiffText = saveDir + string(os.PathSeparator) + "diff.txt"
 	fDiffSql  = saveDir + string(os.PathSeparator) + "diff.sql"
-	c = make(chan int, 4)
+	c = make(chan int, 10)
 	q = make(chan bool)
 )
 
@@ -63,15 +65,25 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 	dDsList := strings.Split(destDsn, "/")
 	sDs, sDbName := sDsList[0], sDsList[1]
 	dDs, dDbName := dDsList[0], dDsList[1]
-	diffStdout, err := os.OpenFile(fDiffText, os.O_CREATE|os.O_WRONLY, 0600)
-	sqlStdout, err := os.OpenFile(fDiffSql, os.O_CREATE|os.O_WRONLY, 0600)
+	diffStdout, err := os.OpenFile(fDiffText, os.O_CREATE|os.O_WRONLY, 0644)
+	sqlStdout, err := os.OpenFile(fDiffSql, os.O_CREATE|os.O_WRONLY, 0644)
+	strBuf := bytes.NewBufferString("")
 	checkErr(err)
 	defer diffStdout.Close()
 	defer sqlStdout.Close()
 
+	go func() {
+		for {
+			select {
+			case <-c:
+			case <-time.After(15 * time.Second):
+				q <- true
+				break
+			}
+		}
+	}()
+
 	for _, table := range getCompareTables(sourceDsn) {
-		c <- 0
-		fmt.Println(table)
 		command := []string{
 			fmt.Sprintf("--server1=%s", urlGoToJdbc(sDs)),
 			fmt.Sprintf("--server2=%s", urlGoToJdbc(dDs)),
@@ -81,11 +93,13 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 		// diff format
 		go func() {
 			cmd := exec.Command("mysqldiff", command...)
-			multiWriter := io.MultiWriter(os.Stdout, diffStdout)
+			multiWriter := io.MultiWriter(os.Stdout, diffStdout, strBuf)
 			cmd.Stdout = multiWriter
 			cmd.Stderr = multiWriter
 			//fmt.Println(cmd.Args)
 			cmd.Run()
+			c <- 0
+			fmt.Println("Done diff -- ", table)
 		}()
 
 		// sql format
@@ -97,32 +111,25 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 			cmd.Stderr = multiWriter
 			//fmt.Println(cmd.Args)
 			cmd.Run()
+			c <- 0
+			fmt.Println("Done sql -- ", table)
 		}()
 	}
-	go func() {
-		for {
-			select {
-			case v := <-c:
-				fmt.Println(v)
-			case <-time.After(10 * time.Second):
-				q <- true
-				fmt.Println("break!")
-				break
-			}
-		}
-	}()
-
+	<-q
 	if cfg.Email.SendMail {
 		cfg.Email.Subject = fmt.Sprintf("【Mysqldiff】%s %s", strings.Split(urlGoToJdbc(sourceDsn), "@")[1], strings.Split(urlGoToJdbc(destDsn), "@")[1])
-		sendMail()
+		body, err := ioutil.ReadAll(strBuf)
+		checkErr(err)
+		sendMail(string(body))
 	}
 }
 
-func sendMail() {
+func sendMail(body string) {
 	m := gomail.NewMessage()
 	m.SetHeader("From", cfg.Email.From)
 	m.SetHeader("Subject", cfg.Email.Subject)
 	m.SetHeader("To", cfg.Email.To[0])
+	m.SetBody("text/plain", fmt.Sprintf("变更SQL文件见附件！\n %s", body))
 	if len(cfg.Email.To) > 1 {
 		m.SetHeader("Cc", cfg.Email.To[1:]...)
 	}
@@ -137,5 +144,4 @@ func main() {
 	for _, l := range cfg.Comparelist {
 		mysqlDiff(l.SourceDsn, l.DestDsn)
 	}
-	<-q
 }

@@ -1,0 +1,17 @@
+{
+  "comparelist": [
+    {
+      "sourceDsn": "testdb:testsha@tcp(testtest.mysql.rds.aliyuncs.com)/test",
+      "destDsn": "testdb:testsha@tcp(testtest.mysql.rds.aliyuncs.com)/test_uat"
+    }
+  ],
+  "email": {
+    "send_mail": true,
+    "smtp_host": "smtp.exmail.qq.com",
+    "smtp_port": 465,
+    "subject": "",
+    "from": "xxx@test.com",
+    "password": "xxx",
+    "to": ["xxx@test.com"]
+  }
+}
