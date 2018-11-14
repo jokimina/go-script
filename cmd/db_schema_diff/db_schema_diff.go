@@ -76,7 +76,7 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 		for {
 			select {
 			case <-c:
-			case <-time.After(15 * time.Second):
+			case <-time.After(5 * time.Second):
 				q <- true
 				break
 			}
