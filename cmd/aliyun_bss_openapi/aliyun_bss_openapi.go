@@ -13,6 +13,7 @@ func main() {
 		panic(err)
 	}
 	request := bssopenapi.CreateQueryAccountBalanceRequest()
+	//request.SetDomain("business.aliyuncs.com")
 	resp, err := client.QueryAccountBalance(request)
 	if err != nil {
 		panic(err)
