@@ -20,17 +20,39 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-	"path/filepath"
-	"time"
-
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"os"
+	"path/filepath"
+	"reflect"
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
+
+func getResouceNames(inter interface{}) (nameList []string) {
+	l := reflect.Indirect(reflect.ValueOf(inter)).FieldByName("Items")
+	switch l.Kind() {
+	case reflect.Slice:
+		s := reflect.ValueOf(l.Interface())
+		for i := 0; i < s.Len(); i++ {
+			item := reflect.ValueOf(s.Index(i).Interface())
+			name := item.FieldByName("Name").Interface().(string)
+			nameList = append(nameList, name)
+		}
+	default:
+		fmt.Println(l.Kind())
+		fmt.Println(reflect.ValueOf(l))
+	}
+	return
+}
+
+func homeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE") // windows
+}
 
 func main() {
 	var kubeconfig *string
@@ -52,37 +74,36 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	for {
-		pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
-		if err != nil {
-			panic(err.Error())
-		}
-		fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
-
-		// Examples for error handling:
-		// - Use helper functions like e.g. errors.IsNotFound()
-		// - And/or cast to StatusError and use its properties like e.g. ErrStatus.Message
-		namespace := "default"
-		pod := "example-xxxxx"
-		_, err = clientset.CoreV1().Pods(namespace).Get(pod, metav1.GetOptions{})
-		if errors.IsNotFound(err) {
-			fmt.Printf("Pod %s in namespace %s not found\n", pod, namespace)
-		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			fmt.Printf("Error getting pod %s in namespace %s: %v\n",
-				pod, namespace, statusError.ErrStatus.Message)
-		} else if err != nil {
-			panic(err.Error())
-		} else {
-			fmt.Printf("Found pod %s in namespace %s\n", pod, namespace)
-		}
-
-		time.Sleep(10 * time.Second)
+	namespaces, err := clientset.CoreV1().Namespaces().List(metav1.ListOptions{})
+	if err != nil {
+		panic(err.Error())
 	}
-}
+	fmt.Printf("There are %d namespaces in the cluster, %v\n", len(namespaces.Items), getResouceNames(namespaces))
 
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
+	pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
+	if err != nil {
+		panic(err.Error())
 	}
-	return os.Getenv("USERPROFILE") // windows
+	fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
+
+	pods, err = clientset.CoreV1().Pods(metav1.NamespaceDefault).List(metav1.ListOptions{})
+	fmt.Println(getResouceNames(pods))
+
+	// deployment
+	deployClient := clientset.AppsV1().Deployments(metav1.NamespaceDefault)
+	deployments, err := deployClient.List(metav1.ListOptions{LabelSelector: "env=testing"})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("There are %d deployment on %s namespace, in the cluster\n", len(pods.Items), metav1.NamespaceDefault)
+	fmt.Println(getResouceNames(deployments))
+
+	//retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	deploy, err := deployClient.Get("nginx", metav1.GetOptions{})
+	deploy.String()
+	appContainer := deploy.Spec.Template.Spec.Containers[0]
+	fmt.Println(deploy.String())
+	fmt.Println(deploy.GetName(), *deploy.Spec.Replicas, appContainer.Image, appContainer.LivenessProbe)
+	//return err
+	//})
 }
