@@ -95,15 +95,21 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("There are %d deployment on %s namespace, in the cluster\n", len(pods.Items), metav1.NamespaceDefault)
+	fmt.Printf("There are %d deployment on %s namespace, in the cluster\n", len(deployments.Items), metav1.NamespaceDefault)
 	fmt.Println(getResouceNames(deployments))
 
-	//retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-	deploy, err := deployClient.Get("nginx", metav1.GetOptions{})
-	deploy.String()
-	appContainer := deploy.Spec.Template.Spec.Containers[0]
-	fmt.Println(deploy.String())
-	fmt.Println(deploy.GetName(), *deploy.Spec.Replicas, appContainer.Image, appContainer.LivenessProbe)
-	//return err
-	//})
+	for _, deployment := range deployments.Items {
+		appContainer := deployment.Spec.Template.Spec.Containers[0]
+		//fmt.Println(deploy.String())
+		fmt.Println(deployment.GetName(), *deployment.Spec.Replicas, appContainer.Image)
+	}
+
+	deployment, err := deployClient.Get("nginx", metav1.GetOptions{})
+	if err != nil {
+		panic(fmt.Errorf("Failed to get latest version of Deployment: %v", err))
+	}
+	appContainer := deployment.Spec.Template.Spec.Containers[0]
+	appContainer.Image = "nginx:latest"
+	r, err := deployClient.Update(deployment)
+	fmt.Println(r)
 }
