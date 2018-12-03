@@ -18,6 +18,7 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,6 +47,8 @@ func getResouceNames(inter interface{}) (nameList []string) {
 	}
 	return
 }
+
+func int32Ptr(i int32) *int32 { return &i }
 
 func homeDir() string {
 	if h := os.Getenv("HOME"); h != "" {
@@ -101,7 +104,7 @@ func main() {
 	for _, deployment := range deployments.Items {
 		appContainer := deployment.Spec.Template.Spec.Containers[0]
 		//fmt.Println(deploy.String())
-		fmt.Println(deployment.GetName(), *deployment.Spec.Replicas, appContainer.Image)
+		fmt.Println(deployment.GetName(), appContainer.Image)
 	}
 
 	deployment, err := deployClient.Get("nginx", metav1.GetOptions{})
@@ -109,7 +112,14 @@ func main() {
 		panic(fmt.Errorf("Failed to get latest version of Deployment: %v", err))
 	}
 	appContainer := deployment.Spec.Template.Spec.Containers[0]
-	appContainer.Image = "nginx:latest"
-	r, err := deployClient.Update(deployment)
-	fmt.Println(r)
+	deployment.Spec.Replicas = int32Ptr(2)
+	deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().Set(int64(2000000))
+	deployment.Spec.Template.Spec.Containers[0].Image = "nginx:alpine"
+	fmt.Println(deployment.GetName(), appContainer.Image)
+	_, err = deployClient.UpdateStatus(deployment)
+	b, err := json.MarshalIndent(deployment.Spec.Template.Spec.Containers, "", "  ")
+	fmt.Println(string(b))
+	if err != nil {
+		panic(err)
+	}
 }
