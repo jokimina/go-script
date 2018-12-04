@@ -104,12 +104,25 @@ func getLeisuresConditional(metric string, f func(d Datapoint) bool) mapset.Set 
 }
 
 func main() {
-	cpuLeisures := getLeisuresConditional("cpu_total", func(d Datapoint) bool {
-		return d.Average < 10
-	})
-	memLeisures := getLeisuresConditional("memory_usedutilization", func(d Datapoint) bool {
-		return d.Average < 30
-	})
+	var (
+		cpuLeisures, memLeisures mapset.Set
+	)
+	ch := make(chan int, 2)
+	go func() {
+		cpuLeisures = getLeisuresConditional("cpu_total", func(d Datapoint) bool {
+			return d.Average < 10
+		})
+		ch <- 0
+	}()
+	go func() {
+		memLeisures = getLeisuresConditional("memory_usedutilization", func(d Datapoint) bool {
+			return d.Average < 30
+		})
+		ch <- 0
+	}()
+	for i:=0;i<cap(ch);i++ {
+		<- ch
+	}
 	leisures := cpuLeisures.Intersect(memLeisures)
 	fmt.Println(getNames(func() (l []string) {
 		for v := range leisures.Iterator().C {
