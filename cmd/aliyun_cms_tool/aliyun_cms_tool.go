@@ -52,7 +52,7 @@ func getNames(l []string) (lName []string) {
 	return
 }
 
-func getLeisuresConditional(metric string, f func(d Datapoint) bool) mapset.Set {
+func getLeisuresConditional(project string, metric string, f func(d Datapoint) bool) mapset.Set {
 	var leisures []interface{}
 	config := aliyun.NewConfigFromEnv()
 	client, err := cms.NewClientWithAccessKey(config.RegionId, config.AccessKeyId, config.AccessKeySecret)
@@ -60,7 +60,7 @@ func getLeisuresConditional(metric string, f func(d Datapoint) bool) mapset.Set 
 		panic(err)
 	}
 	request := cms.CreateQueryMetricListRequest()
-	request.Project = "acs_ecs_dashboard"
+	request.Project = project
 	//request.Metric = "cpu_total"
 	//request.Metric = "memory_usedutilization"
 	request.Metric = metric
@@ -103,25 +103,26 @@ func getLeisuresConditional(metric string, f func(d Datapoint) bool) mapset.Set 
 	return mapset.NewSetFromSlice(leisures)
 }
 
-func main() {
+func findEcsLeisures() {
 	var (
 		cpuLeisures, memLeisures mapset.Set
+		Project = "acs_ecs_dashboard"
 	)
 	ch := make(chan int, 2)
 	go func() {
-		cpuLeisures = getLeisuresConditional("cpu_total", func(d Datapoint) bool {
+		cpuLeisures = getLeisuresConditional(Project, "cpu_total", func(d Datapoint) bool {
 			return d.Average < 10
 		})
 		ch <- 0
 	}()
 	go func() {
-		memLeisures = getLeisuresConditional("memory_usedutilization", func(d Datapoint) bool {
+		memLeisures = getLeisuresConditional(Project, "memory_usedutilization", func(d Datapoint) bool {
 			return d.Average < 30
 		})
 		ch <- 0
 	}()
-	for i:=0;i<cap(ch);i++ {
-		<- ch
+	for i := 0; i < cap(ch); i++ {
+		<-ch
 	}
 	leisures := cpuLeisures.Intersect(memLeisures)
 	fmt.Println(getNames(func() (l []string) {
@@ -130,7 +131,19 @@ func main() {
 		}
 		return
 	}()))
-	//fmt.Println(len(leisures), dup_count(leisures), leisures)
-	//b, err := json.MarshalIndent(getNames(leisures), "", " ")
-	//fmt.Println(string(b))
+}
+
+func findRdsLeisures(){
+	var (
+		Project = "acs_rds_dashboard"
+	)
+	rdsLeisures := getLeisuresConditional(Project, "IOPSUsage", func(d Datapoint) bool {
+		return  d.Average < 0.1
+	})
+	fmt.Println(rdsLeisures)
+}
+// Aliyun cms api reference: https://help.aliyun.com/document_detail/28619.html?spm=a2c4g.11174283.6.670.75298f4foxUvfw#h2-url-3
+func main() {
+	findRdsLeisures()
+	//findEcsLeisures()
 }
