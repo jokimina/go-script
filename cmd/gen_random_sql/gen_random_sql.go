@@ -39,7 +39,7 @@ func genSql(tmpSlice []int, chNumCtrl chan bool, file *os.File) {
 	bf := bytes.NewBuffer([]byte{})
 	for _, v := range slice {
 		sql := fmt.Sprintf("'%d', '%d', '%f', '%s'\n", v, rand.Int31n(5000), float32(rand.Int31n(100)+1), date)
-		fmt.Print(sql)
+		//fmt.Print(sql)
 		bf.WriteString(sql)
 	}
 	lrw.Lock()
