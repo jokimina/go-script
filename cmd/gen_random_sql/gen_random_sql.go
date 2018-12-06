@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"math/rand"
 	"os"
@@ -14,20 +15,30 @@ const (
 	TotalNum   int = 600000000
 	PartNum    int = 100000
 	TimeFormat     = "2006-01-02 15:04:05"
+	FileName       = "data.sql"
 )
 
 var (
-	tmpSlice  []int
-	t         []int
-	lrw       sync.RWMutex
-	minTime   = time.Date(2018, 11, 1, 0, 0, 0, 0, time.UTC).Unix()
-	maxTime   = time.Now().Unix()
-	delta     = maxTime - minTime
-	chNumCtrl = make(chan bool, runtime.NumCPU())
-	blockLock = make(chan bool, 1)
+	wg            sync.WaitGroup
+	tmpSlice      []int
+	lrw           sync.RWMutex
+	minTime       = time.Date(2018, 11, 1, 0, 0, 0, 0, time.UTC).Unix()
+	maxTime       = time.Now().Unix()
+	delta         = maxTime - minTime
+	blockLock     = make(chan bool, 1)
+	maxRoutineNum = runtime.NumCPU()
+	chNumCtrl     chan bool
 )
 
+func init() {
+	flag.IntVar(&maxRoutineNum, "n", runtime.NumCPU(), "goroutine num")
+	flag.Parse()
+	chNumCtrl = make(chan bool, maxRoutineNum)
+	runtime.GOMAXPROCS(maxRoutineNum)
+}
+
 func genSql(tmpSlice []int, chNumCtrl chan bool, file *os.File) {
+	wg.Add(1)
 	slice := make([]int, PartNum)
 	copy(slice, tmpSlice)
 	blockLock <- true
@@ -46,13 +57,13 @@ func genSql(tmpSlice []int, chNumCtrl chan bool, file *os.File) {
 	file.Write(bf.Bytes())
 	file.Sync()
 	lrw.Unlock()
-	fmt.Printf("end %d - %d...\n", startPos, endPos)
-	runtime.GC()
 	<-chNumCtrl
+	fmt.Printf("end %d - %d...\n", startPos, endPos)
+	wg.Done()
 }
 
 func main() {
-	file, err := os.Create("data.sql")
+	file, err := os.Create(FileName)
 	if err != nil {
 		panic(err)
 	}
@@ -68,4 +79,5 @@ func main() {
 			tmpSlice = tmpSlice[:0]
 		}
 	}
+	wg.Wait()
 }
