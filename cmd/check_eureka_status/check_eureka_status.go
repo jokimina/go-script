@@ -82,6 +82,7 @@ var (
 	DingDingUrl string
 	Receivers   arrayFlags
 	Comment     string
+	atLeastNum  int
 )
 
 func init() {
@@ -89,6 +90,7 @@ func init() {
 	flag.StringVar(&DingDingUrl, "dUrl", "", "dingding url")
 	flag.Var(&Receivers, "r", "receivers")
 	flag.StringVar(&Comment, "m", "", "comment")
+	flag.IntVar(&atLeastNum, "n", 0, "At latest service number")
 	flag.Usage = usage
 }
 
@@ -102,7 +104,7 @@ func main() {
 	if len(Receivers) == 0 || len(EurekaUrl) == 0 || len(DingDingUrl) == 0 {
 		flag.Usage()
 	}
-	fmt.Println(EurekaUrl, DingDingUrl, Receivers)
+	fmt.Println(EurekaUrl, DingDingUrl, Receivers, atLeastNum)
 	url := EurekaUrl + "/eureka/apps"
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -117,8 +119,13 @@ func main() {
 	//r, _ := json.MarshalIndent(apps,""," ")
 	//fmt.Println(string(r))
 	var exceptList []string
-	for _, appValMap := range apps["applications"].Application {
-		for _, instance := range appValMap.Instance {
+
+	applications := apps["applications"].Application
+	if len(applications) < atLeastNum {
+		exceptList = append(exceptList, fmt.Sprintf("- 服务注册数量异常 应注册: %d, 目前: %d", atLeastNum, len(applications)))
+	}
+	for _, appValMap := range applications {
+		for _, instance := range appValMap.Instance{
 			if "UP" != instance.Status {
 				exceptList = append(exceptList, fmt.Sprintf("- %s %s %s\n", instance.App, instance.HostName, instance.Status))
 			}
