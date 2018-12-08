@@ -1,0 +1,17 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cron-apollo-check
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: cron-apollo-check
+            image: jokimina/cron_apollo_check
+            command:
+            - --url=http://xxxx
+            - --key=xxx
+          restartPolicy: OnFailure
