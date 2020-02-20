@@ -92,5 +92,5 @@ func searchAccessId(accessKeyId string) {
 }
 
 func main() {
-	searchAccessId("LTAItKFNw6JwtILC")
+	searchAccessId("")
 }
