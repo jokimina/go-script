@@ -68,7 +68,6 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 	diffStdout, err := os.OpenFile(fDiffText, os.O_CREATE|os.O_WRONLY, 0644)
 	sqlStdout, err := os.OpenFile(fDiffSql, os.O_CREATE|os.O_WRONLY, 0644)
 	body := bytes.NewBuffer([]byte(""))
-	strBuf := bytes.NewBufferString("")
 	checkErr(err)
 	defer diffStdout.Close()
 	defer sqlStdout.Close()
@@ -93,38 +92,39 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 		}
 		// diff format
 		go func(t string) {
+			strBuf := bytes.NewBufferString("")
 			cmd := exec.Command("mysqldiff", command...)
-			multiWriter := io.MultiWriter(os.Stdout, diffStdout, strBuf)
+			// multiWriter := io.MultiWriter(os.Stdout, diffStdout, strBuf)
+			multiWriter := io.MultiWriter(diffStdout, strBuf)
 			cmd.Stdout = multiWriter
 			cmd.Stderr = multiWriter
 
 			//fmt.Println(cmd.Args)
 			//cmd.Run()
 			if err := cmd.Run() ; err != nil {
-				if _, ok := err.(*exec.ExitError); !ok {
-					s, _ := ioutil.ReadAll(strBuf)
-					body.Write(s)
-				}
+				s, _ := ioutil.ReadAll(strBuf)
+				body.Write(s)
+				fmt.Println("Done diff -- ", t, err.Error())
 			}
+			strBuf.Reset()
 			c <- 0
-			fmt.Println("Done diff -- ", t)
 		}(table)
 
 		// sql format
-		go func(t string) {
-			cmd := exec.Command("mysqldiff", command...)
-			multiWriter := io.MultiWriter(os.Stdout, sqlStdout)
-			cmd.Args = append(cmd.Args, "-d", "sql")
-			cmd.Stdout = multiWriter
-			cmd.Stderr = multiWriter
-			//fmt.Println(cmd.Args)
-			cmd.Run()
-			c <- 0
-			fmt.Println("Done sql -- ", t)
-		}(table)
+		//      go func(t string) {
+		//              cmd := exec.Command("mysqldiff", command...)
+		//              multiWriter := io.MultiWriter(os.Stdout, sqlStdout)
+		//              cmd.Args = append(cmd.Args, "-d", "sql")
+		//              cmd.Stdout = multiWriter
+		//              cmd.Stderr = multiWriter
+		//fmt.Println(cmd.Args)
+		// cmd.Run()
+		//              c <- 0
+		// fmt.Println("Done sql -- ", t)
+		//      }(table)
 	}
 	<-q
-	if cfg.Email.SendMail {
+	if cfg.Email.SendMail && body.Len() > 0 {
 		cfg.Email.Subject = fmt.Sprintf("【Mysqldiff】%s %s", strings.Split(urlGoToJdbc(sourceDsn), "@")[1], strings.Split(urlGoToJdbc(destDsn), "@")[1])
 		rBody, err := ioutil.ReadAll(body)
 		checkErr(err)
