@@ -91,7 +91,7 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 			"--skip-table-options",
 		}
 		// diff format
-		go func() {
+		go func(t string) {
 			cmd := exec.Command("mysqldiff", command...)
 			multiWriter := io.MultiWriter(os.Stdout, diffStdout, strBuf)
 			cmd.Stdout = multiWriter
@@ -99,11 +99,11 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 			//fmt.Println(cmd.Args)
 			cmd.Run()
 			c <- 0
-			fmt.Println("Done diff -- ", table)
-		}()
+			fmt.Println("Done diff -- ", t)
+		}(table)
 
 		// sql format
-		go func() {
+		go func(t string) {
 			cmd := exec.Command("mysqldiff", command...)
 			multiWriter := io.MultiWriter(os.Stdout, sqlStdout)
 			cmd.Args = append(cmd.Args, "-d", "sql")
@@ -112,8 +112,8 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 			//fmt.Println(cmd.Args)
 			cmd.Run()
 			c <- 0
-			fmt.Println("Done sql -- ", table)
-		}()
+			fmt.Println("Done sql -- ", t)
+		}(table)
 	}
 	<-q
 	if cfg.Email.SendMail {
