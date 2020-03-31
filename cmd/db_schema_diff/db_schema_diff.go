@@ -67,6 +67,7 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 	dDs, dDbName := dDsList[0], dDsList[1]
 	diffStdout, err := os.OpenFile(fDiffText, os.O_CREATE|os.O_WRONLY, 0644)
 	sqlStdout, err := os.OpenFile(fDiffSql, os.O_CREATE|os.O_WRONLY, 0644)
+	body := bytes.NewBuffer([]byte(""))
 	strBuf := bytes.NewBufferString("")
 	checkErr(err)
 	defer diffStdout.Close()
@@ -96,8 +97,15 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 			multiWriter := io.MultiWriter(os.Stdout, diffStdout, strBuf)
 			cmd.Stdout = multiWriter
 			cmd.Stderr = multiWriter
+
 			//fmt.Println(cmd.Args)
-			cmd.Run()
+			//cmd.Run()
+			if err := cmd.Run() ; err != nil {
+				if _, ok := err.(*exec.ExitError); !ok {
+					s, _ := ioutil.ReadAll(strBuf)
+					body.Write(s)
+				}
+			}
 			c <- 0
 			fmt.Println("Done diff -- ", t)
 		}(table)
@@ -118,9 +126,9 @@ func mysqlDiff(sourceDsn string, destDsn string) {
 	<-q
 	if cfg.Email.SendMail {
 		cfg.Email.Subject = fmt.Sprintf("【Mysqldiff】%s %s", strings.Split(urlGoToJdbc(sourceDsn), "@")[1], strings.Split(urlGoToJdbc(destDsn), "@")[1])
-		body, err := ioutil.ReadAll(strBuf)
+		rBody, err := ioutil.ReadAll(body)
 		checkErr(err)
-		sendMail(string(body))
+		sendMail(string(rBody))
 	}
 }
 
